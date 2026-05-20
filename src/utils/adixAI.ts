@@ -34,7 +34,7 @@ export function gerarInsightsPaciente(paciente: AIPaciente, consultas: AIConsult
     ? parseFloat(((paciente.peso_inicial * 35) / 1000).toFixed(1)) 
     : 2.5;
 
-  const litrosConsumidos = paciente.litros_agua ? parseFloat(paciente.litros_agua) : 0;
+  const litrosConsumidos = paciente.litros_agua ? Number(paciente.litros_agua) : 0;
   const aguaStatus = litrosConsumidos >= metaAgua ? 'ideal' : 'baixo';
 
   const objectives = paciente.objetivos || [];
@@ -109,7 +109,7 @@ export function gerarInsightsPaciente(paciente: AIPaciente, consultas: AIConsult
   }
 
   if (paciente.refeicoes_por_dia) {
-    const refNum = parseInt(paciente.refeicoes_por_dia, 10);
+    const refNum = Number(paciente.refeicoes_por_dia);
     if (refNum < 3) {
       recomHabitos.push('O número de refeições diárias é baixo. Considere fracionar mais para evitar episódios de fome intensa.');
     } else if (refNum > 6) {
@@ -136,20 +136,22 @@ export function gerarInsightsPaciente(paciente: AIPaciente, consultas: AIConsult
     if (consultasComPeso.length > 1) {
       const pesoRecente = consultasComPeso[0].peso;
       const pesoAnterior = consultasComPeso[1].peso;
-      const diff = pesoRecente - pesoAnterior;
-      
-      if (diff > 0.5) {
-        if (objectives.includes('Emagrecer')) {
-          alertasSaude.push(`Ganho recente de peso detectado (+${diff.toFixed(1)} kg). Avaliar retenção hídrica ou consistência na dieta.`);
-        } else if (objectives.includes('Ganhar massa')) {
-          recomNutri.push(`Evolução positiva de peso (+${diff.toFixed(1)} kg). Continue estimulando a síntese de massa muscular através de treino resistido.`);
-        }
-      } else if (diff < -0.5) {
-        const perda = Math.abs(diff);
-        if (objectives.includes('Emagrecer')) {
-          recomNutri.push(`Excelente progresso! Redução de peso corporal de -${perda.toFixed(1)} kg desde a última consulta.`);
-        } else if (objectives.includes('Ganhar massa')) {
-          alertasSaude.push(`Queda de peso detectada (-${perda.toFixed(1)} kg). Avalie se o aporte calórico está sendo suficiente para hipertrofia.`);
+      if (pesoRecente !== null && pesoAnterior !== null) {
+        const diff = pesoRecente - pesoAnterior;
+        
+        if (diff > 0.5) {
+          if (objectives.includes('Emagrecer')) {
+            alertasSaude.push(`Ganho recente de peso detectado (+${diff.toFixed(1)} kg). Avaliar retenção hídrica ou consistência na dieta.`);
+          } else if (objectives.includes('Ganhar massa')) {
+            recomNutri.push(`Evolução positiva de peso (+${diff.toFixed(1)} kg). Continue estimulando a síntese de massa muscular através de treino resistido.`);
+          }
+        } else if (diff < -0.5) {
+          const perda = Math.abs(diff);
+          if (objectives.includes('Emagrecer')) {
+            recomNutri.push(`Excelente progresso! Redução de peso corporal de -${perda.toFixed(1)} kg desde a última consulta.`);
+          } else if (objectives.includes('Ganhar massa')) {
+            alertasSaude.push(`Queda de peso detectada (-${perda.toFixed(1)} kg). Avalie se o aporte calórico está sendo suficiente para hipertrofia.`);
+          }
         }
       }
     }
