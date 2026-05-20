@@ -263,13 +263,23 @@ export function DetalhesPacientePage() {
     return `${day}/${month}/${year}`;
   };
 
-  // Cálculo de IMC do paciente
+  // Cálculo de IMC do paciente (Inicial)
   const imcPaciente = useMemo(() => {
     if (!paciente || !paciente.peso_inicial || !paciente.altura) return null;
-    const p = paciente.peso_inicial;
-    const a = paciente.altura / 100; // cm para metros
+    const p = Number(paciente.peso_inicial);
+    const a = Number(paciente.altura) / 100; // cm para metros
     return (p / (a * a)).toFixed(1);
   }, [paciente]);
+
+  // Cálculo de IMC Atual do paciente
+  const imcAtual = useMemo(() => {
+    if (!paciente || !paciente.altura) return null;
+    const pesoRecente = consultas.find(c => c.peso !== null)?.peso ?? paciente.peso_inicial;
+    if (!pesoRecente) return null;
+    const p = Number(pesoRecente);
+    const a = Number(paciente.altura) / 100; // cm para metros
+    return (p / (a * a)).toFixed(1);
+  }, [paciente, consultas]);
 
   // Cálculo das Coordenadas do Gráfico de Linha SVG dinâmico
   const chartData = useMemo(() => {
@@ -294,8 +304,8 @@ export function DetalhesPacientePage() {
     } else {
       // IMC
       filtered = consultasCron.filter(c => c.peso !== null && paciente.altura).map(c => {
-        const p = c.peso as number;
-        const a = (paciente.altura as number) / 100;
+        const p = Number(c.peso);
+        const a = Number(paciente.altura) / 100;
         const imcVal = parseFloat((p / (a * a)).toFixed(1));
         return {
           value: imcVal,
@@ -397,6 +407,13 @@ export function DetalhesPacientePage() {
             <div><strong>Idade:</strong> {calculateAge(paciente.data_nascimento) !== null ? `${calculateAge(paciente.data_nascimento)} anos` : 'Não informada'}</div>
             <div><strong>Sexo:</strong> {paciente.sexo || 'Não informado'}</div>
             <div><strong>WhatsApp:</strong> {paciente.whatsapp || 'Não informado'}</div>
+            <div>
+              <strong>IMC Atual:</strong> {imcAtual ? `${imcAtual} (${
+                parseFloat(imcAtual) < 18.5 ? 'Abaixo do peso' : 
+                parseFloat(imcAtual) < 25 ? 'Peso normal' : 
+                parseFloat(imcAtual) < 30 ? 'Sobrepeso' : 'Obesidade'
+              })` : 'Não calculado'}
+            </div>
           </div>
 
           <div className="perfil-actions" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -801,6 +818,11 @@ export function DetalhesPacientePage() {
                         {consulta.percentual_gordura !== null && (
                           <div className="metric-pill">
                             Gordura: <span>{consulta.percentual_gordura}%</span>
+                          </div>
+                        )}
+                        {consulta.peso !== null && paciente.altura && (
+                          <div className="metric-pill">
+                            IMC: <span>{(Number(consulta.peso) / ((Number(paciente.altura) / 100) * (Number(paciente.altura) / 100))).toFixed(1)}</span>
                           </div>
                         )}
                       </div>
